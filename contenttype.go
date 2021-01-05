@@ -2,7 +2,6 @@ package contenttype
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 )
 
@@ -309,38 +308,40 @@ func (mediaType *MediaType) String() string {
 
 // Gets the content of Content-Type header, parses it, and returns the parsed MediaType
 // If the request does not contain the Content-Type header, an empty MediaType is returned
-func GetMediaType(request *http.Request) (MediaType, error) {
+func GetMediaType(request interface{}) (MediaType, error) {
+	adapter, err := getAdapter(request)
+	if err != nil {
+		return MediaType{}, err
+	}
 	// RFC 7231, 3.1.1.5. Content-Type
-	contentTypeHeaders := request.Header.Values("Content-Type")
-	if len(contentTypeHeaders) == 0 {
+	contentTypeHeader := adapter.GetContentType()
+	if len(contentTypeHeader) == 0 {
 		return MediaType{}, nil
 	}
-
-	s := contentTypeHeaders[0]
 	mediaType := MediaType{}
 	var consumed bool
-	mediaType.Type, mediaType.Subtype, s, consumed = consumeType(s)
+	mediaType.Type, mediaType.Subtype, contentTypeHeader, consumed = consumeType(contentTypeHeader)
 	if !consumed {
 		return MediaType{}, ErrInvalidMediaType
 	}
 
 	mediaType.Parameters = make(Parameters)
 
-	for len(s) > 0 && s[0] == ';' {
-		s = s[1:] // skip the semicolon
+	for len(contentTypeHeader) > 0 && contentTypeHeader[0] == ';' {
+		contentTypeHeader = contentTypeHeader[1:] // skip the semicolon
 
-		key, value, remaining, consumed := consumeParameter(s)
+		key, value, remaining, consumed := consumeParameter(contentTypeHeader)
 		if !consumed {
 			return MediaType{}, ErrInvalidParameter
 		}
 
-		s = remaining
+		contentTypeHeader = remaining
 
 		mediaType.Parameters[key] = value
 	}
 
 	// there must not be anything left after parsing the header
-	if len(s) > 0 {
+	if len(contentTypeHeader) > 0 {
 		return MediaType{}, ErrInvalidMediaType
 	}
 
@@ -349,18 +350,20 @@ func GetMediaType(request *http.Request) (MediaType, error) {
 
 // Choses a media type from available media types according to the Accept
 // Returns the most suitable media type or an error if no type can be selected
-func GetAcceptableMediaType(request *http.Request, availableMediaTypes []MediaType) (MediaType, Parameters, error) {
+func GetAcceptableMediaType(request interface{}, availableMediaTypes []MediaType) (MediaType, Parameters, error) {
+	adapter, err := getAdapter(request)
+	if err != nil {
+		return MediaType{}, Parameters{}, err
+	}
 	// RFC 7231, 5.3.2. Accept
 	if len(availableMediaTypes) == 0 {
 		return MediaType{}, Parameters{}, ErrNoAvailableTypeGiven
 	}
 
-	acceptHeaders := request.Header.Values("Accept")
-	if len(acceptHeaders) == 0 {
+	s := adapter.GetAcceptHeader()
+	if len(s) == 0 {
 		return availableMediaTypes[0], Parameters{}, nil
 	}
-
-	s := acceptHeaders[0]
 
 	weights := make([]struct {
 		mediaType           MediaType

@@ -41,7 +41,7 @@ func TestGetMediaTypeFastHttp(t *testing.T) {
 				request.Header.Set("Content-Type", testCase.header)
 			}
 
-			result, mediaTypeError := contenttype.GetMediaTypeFastHTTP(request)
+			result, mediaTypeError := contenttype.GetMediaType(request)
 			if mediaTypeError != nil {
 				t.Errorf("Unexpected error \"%s\" for %s", mediaTypeError.Error(), testCase.header)
 			} else if result.Type != testCase.result.Type || result.Subtype != testCase.result.Subtype {
@@ -93,7 +93,7 @@ func TestGetMediaTypeFastHttpErrors(t *testing.T) {
 				request.Header.Set("Content-Type", testCase.header)
 			}
 
-			_, mediaTypeError := contenttype.GetMediaTypeFastHTTP(request)
+			_, mediaTypeError := contenttype.GetMediaType(request)
 			if mediaTypeError == nil {
 				t.Errorf("Expected an error for %s", testCase.header)
 			} else if testCase.err != mediaTypeError {
@@ -167,7 +167,7 @@ func TestGetAcceptableMediaTypeFastHttp(t *testing.T) {
 				request.Header.Set("Accept", testCase.header)
 			}
 
-			result, extensionParameters, mediaTypeError := contenttype.GetAcceptableMediaTypeFastHTTP(request, testCase.availableMediaTypes)
+			result, extensionParameters, mediaTypeError := contenttype.GetAcceptableMediaType(request, testCase.availableMediaTypes)
 
 			if mediaTypeError != nil {
 				t.Errorf("Unexpected error \"%s\" for %s", mediaTypeError.Error(), testCase.header)
@@ -216,7 +216,7 @@ func TestGetAcceptableMediaTypeFastHttpErrors(t *testing.T) {
 				request.Header.Set("Accept", testCase.header)
 			}
 
-			_, _, mediaTypeError := contenttype.GetAcceptableMediaTypeFastHTTP(request, testCase.availableMediaTypes)
+			_, _, mediaTypeError := contenttype.GetAcceptableMediaType(request, testCase.availableMediaTypes)
 			if mediaTypeError == nil {
 				t.Errorf("Expected an error for %s", testCase.header)
 			} else if testCase.err != mediaTypeError {
