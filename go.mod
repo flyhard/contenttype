@@ -1,4 +1,4 @@
-module github.com/elnormous/contenttype
+module github.com/flyhard/contenttype
 
 go 1.12
 
